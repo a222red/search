@@ -10,3 +10,7 @@ edition = "2021"
 clap = {version="3.1.6", features=["cargo", "unicode"]}
 regex = "1.5.5"
 memchr = "2.4.1"
+
+[profile.release]
+strip = true
+lto = true
