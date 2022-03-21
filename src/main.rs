@@ -2,7 +2,7 @@ use std::{
     fs::{read_dir, read_to_string},
     path::{Path, PathBuf},
     str::FromStr,
-    thread::{spawn, JoinHandle},
+    thread::{spawn, JoinHandle, self},
     sync::Arc
 };
 
@@ -49,11 +49,13 @@ fn get_files<P: AsRef<Path>>(
         for dir in exclude_dirs {
             if entry.path().starts_with(dir) {
                 exclude = true;
+                break;
             }
         }
         for file in exclude_files {
             if entry.path() == file.as_path() {
                 exclude = true;
+                break;
             }
         }
         if !exclude {
@@ -77,9 +79,9 @@ fn get_files<P: AsRef<Path>>(
 fn search<P: AsRef<Path>>(file: P, pattern: &Finder, errors: Arc<Errors>) {
     let mut num = 0usize;
     
-    for line in read_to_string(&file).unwrap_or_else(
+    read_to_string(&file).unwrap_or_else(
         |_| errors.not_found.exit()
-    ).lines() {
+    ).lines().for_each(|line| {
         num += 1;
         if let Some(i) = pattern.find(line.as_bytes()) {
             println!(
@@ -94,14 +96,14 @@ fn search<P: AsRef<Path>>(file: P, pattern: &Finder, errors: Arc<Errors>) {
                 ).trim()
             );
         }
-    }
+    });
 }
 
 fn search_regex<P: AsRef<Path>>(file: P, pattern: &Regex, errors: Arc<Errors>) {
     let mut num = 0usize;
-    for line in read_to_string(&file).unwrap_or_else(
+    read_to_string(&file).unwrap_or_else(
         |_| errors.not_found.exit()
-    ).lines() {
+    ).lines().for_each(|line| {
         num += 1;
         if let Some(mat) = pattern.find(line) {
             println!(
@@ -116,7 +118,7 @@ fn search_regex<P: AsRef<Path>>(file: P, pattern: &Regex, errors: Arc<Errors>) {
                 ).trim()
             );
         }
-    }
+    });
 }
 
 fn main() {
@@ -227,7 +229,7 @@ fn main() {
                 ));
             let mut threads = Vec::<JoinHandle<()>>::new();
             match pattern {
-                Pattern::Str(s) => for file in files {
+                Pattern::Str(s) => files.for_each(|file| {
                     let c = s.clone();
                     let e = errors.clone();
                     threads.push(spawn(move || search(
@@ -235,8 +237,8 @@ fn main() {
                         &c,
                         e
                     )));
-                },
-                Pattern::RegEx(r) => for file in files {
+                }),
+                Pattern::RegEx(r) => files.for_each(|file| {
                     let c = r.clone();
                     let e = errors.clone();
                     threads.push(spawn(move || search_regex(
@@ -244,7 +246,7 @@ fn main() {
                         &c,
                         e
                     )));
-                }
+                })
             }
         },
         ("directory", sm) => {
@@ -275,7 +277,7 @@ fn main() {
             let mut threads = Vec::<JoinHandle<()>>::new();
 
             match pattern {
-                Pattern::Str(f) => for file in files {
+                Pattern::Str(f) => files.into_iter().for_each(|file| {
                     let c = f.clone();
                     let e = errors.clone();
                     threads.push(spawn(move || search(
@@ -283,8 +285,8 @@ fn main() {
                         &c,
                         e
                     )));
-                },
-                Pattern::RegEx(r) => for file in files {
+                }),
+                Pattern::RegEx(r) => files.into_iter().for_each(|file| {
                     let c = r.clone();
                     let e = errors.clone();
                     threads.push(spawn(move || search_regex(
@@ -292,14 +294,14 @@ fn main() {
                         &c,
                         e
                     )));
-                }
+                })
             }
         
-            for thread in threads {
+            threads.into_iter().for_each(|thread| {
                 thread.join().unwrap_or_else(
                     |_| unreachable!()
                 );
-            }
+            });
         },
         _ => unreachable!()
     }
