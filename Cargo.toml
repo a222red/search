@@ -8,6 +8,7 @@ edition = "2021"
 
 [dependencies]
 clap = {version="3.1.6", features=["cargo", "unicode"]}
+wild = "2.0.4"
 regex = "1.5.5"
 memchr = "2.4.1"
 

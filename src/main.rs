@@ -16,7 +16,10 @@ use clap::{
     error::{Error, ErrorKind}
 };
 
+use wild::args_os;
+
 use memchr::memmem::Finder;
+
 use regex::Regex;
 
 enum Pattern<'a> {
@@ -186,7 +189,7 @@ fn main() {
             "File or directory not found"
         )
     });
-    let m = cmd.get_matches();
+    let m = cmd.get_matches_from(args_os());
 
     let string = m.value_of("SEARCH_STR")
         .unwrap_or_else(|| unreachable!())
