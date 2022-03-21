@@ -2,7 +2,7 @@ use std::{
     fs::{read_dir, read_to_string},
     path::{Path, PathBuf},
     str::FromStr,
-    thread::{spawn, JoinHandle, self},
+    thread::{spawn, JoinHandle},
     sync::Arc
 };
 
