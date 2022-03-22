@@ -50,17 +50,21 @@ fn get_files<P: AsRef<Path>>(
            |_| errors.io.exit()
         );
         let mut exclude = false;
-        for dir in exclude_dirs {
-            if entry.path().starts_with(dir) {
-                exclude = true;
-                break;
+        loop {
+            for dir in exclude_dirs {
+                if entry.path().starts_with(dir) {
+                    exclude = true;
+                    break;
+                }
             }
-        }
-        for file in exclude_files {
-            if entry.path() == file.as_path() {
-                exclude = true;
-                break;
+            if exclude {break}
+            for file in exclude_files {
+                if entry.path() == file.as_path() {
+                    exclude = true;
+                    break;
+                }
             }
+            break;
         }
         if !exclude {
             match entry.file_type().unwrap_or_else(
