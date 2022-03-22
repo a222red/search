@@ -211,14 +211,14 @@ fn main() {
     });
     let m = cmd.get_matches_from(args_os());
 
-    let string = m.value_of("SEARCH_STR")
+    let search_str = m.value_of("SEARCH_STR")
         .unwrap_or_else(|| unreachable!());
     let pattern = match m.is_present("REGEX") {
         true => Pattern::RegEx(
-            Regex::new(string)
+            Regex::new(search_str)
                 .unwrap_or_else(|_| errors.bad_regex.exit())
         ),
-        false => Pattern::Str(Finder::new(string).into_owned())
+        false => Pattern::Str(Finder::new(search_str).into_owned())
     };
 
     match m.subcommand().unwrap_or_else(|| unreachable!()) {
