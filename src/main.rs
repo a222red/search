@@ -30,7 +30,9 @@ enum Pattern<'a> {
 struct Errors {
     bad_regex: Error,
     bad_path: Error,
-    not_found: Error
+    not_found: Error,
+    io: Error,
+    utf8: Error
 }
 
 fn get_files<P: AsRef<Path>>(
@@ -44,7 +46,9 @@ fn get_files<P: AsRef<Path>>(
     for opt in read_dir(path).unwrap_or_else(
         |_| errors.not_found.exit()
     ) {
-        let entry = opt.unwrap();
+        let entry = opt.unwrap_or_else(
+           |_| errors.io.exit()
+        );
         let mut exclude = false;
         for dir in exclude_dirs {
             if entry.path().starts_with(dir) {
@@ -88,7 +92,9 @@ fn search<P: AsRef<Path>>(file: P, pattern: &Finder, errors: Arc<Errors>) {
         if let Some(i) = pattern.find(line.as_bytes()) {
             println!(
                 "\u{001b}[34;1m[{}:{}]:\u{001b}[0m {}",
-                file.as_ref().to_str().unwrap(),
+                file.as_ref().to_str().unwrap_or_else(
+                    || errors.utf8.exit()
+                ),
                 num,
                 format!(
                     "{}\u{001b}[32m{}\u{001b}[0m{}",
@@ -110,7 +116,9 @@ fn search_regex<P: AsRef<Path>>(file: P, pattern: &Regex, errors: Arc<Errors>) {
         if let Some(mat) = pattern.find(line) {
             println!(
                 "\u{001b}[33m[{}:{}]:\u{001b}[0m {}",
-                file.as_ref().to_str().unwrap(),
+                file.as_ref().to_str().unwrap_or_else(
+                    || errors.utf8.exit()
+                ),
                 num,
                 format!(
                     "{}\u{001b}[32m{}\u{001b}[0m{}",
@@ -191,6 +199,14 @@ fn main() {
         not_found: cmd.error(
             ErrorKind::ValueValidation,
             "File or directory not found"
+        ),
+        io: cmd.error(
+            ErrorKind::ValueValidation,
+            "IO error"
+        ),
+        utf8: cmd.error(
+            ErrorKind::ValueValidation,
+            "UTF-8 error"
         )
     });
     let m = cmd.get_matches_from(args_os());
