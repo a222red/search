@@ -59,7 +59,9 @@ fn get_files<P: AsRef<Path>>(
             }
         }
         if !exclude {
-            match entry.file_type().unwrap().is_dir() {
+            match entry.file_type().unwrap_or_else(
+                |_| unreachable!()
+            ).is_dir() {
                 true => out.append(
                     &mut get_files(
                         entry.path(),
