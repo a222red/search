@@ -1,9 +1,9 @@
 use std::{
-    fs::{read_dir, read_to_string},
+    fs::{read_dir, File},
     path::{Path, PathBuf},
     str::FromStr,
     thread::{spawn, JoinHandle},
-    sync::Arc
+    sync::Arc, io::Read
 };
 
 use clap::{
@@ -86,12 +86,22 @@ fn get_files<P: AsRef<Path>>(
     return out;
 }
 
+fn read_to_string<P: AsRef<Path>>(file: &P, errors: Arc<Errors>) -> String {
+    let mut buf = String::new();
+
+    File::open(file).unwrap_or_else(
+        |_| errors.not_found.exit()
+    ).read_to_string(&mut buf).unwrap_or_else(
+        |_| errors.utf8.exit()
+    );
+
+    return buf;
+}
+
 fn search<P: AsRef<Path>>(file: P, pattern: &Finder, errors: Arc<Errors>) {
     let mut num = 0usize;
-    
-    read_to_string(&file).unwrap_or_else(
-        |_| errors.not_found.exit()
-    ).lines().for_each(|line| {
+
+    read_to_string(&file, errors.clone()).lines().for_each(|line| {
         num += 1;
         if let Some(i) = pattern.find(line.as_bytes()) {
             println!(
@@ -113,9 +123,7 @@ fn search<P: AsRef<Path>>(file: P, pattern: &Finder, errors: Arc<Errors>) {
 
 fn search_regex<P: AsRef<Path>>(file: P, pattern: &Regex, errors: Arc<Errors>) {
     let mut num = 0usize;
-    read_to_string(&file).unwrap_or_else(
-        |_| errors.not_found.exit()
-    ).lines().for_each(|line| {
+    read_to_string(&file, errors.clone()).lines().for_each(|line| {
         num += 1;
         if let Some(mat) = pattern.find(line) {
             println!(
