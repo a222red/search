@@ -3,7 +3,7 @@ mod fs;
 use crate::fs::{get_files, read_to_string};
 
 use std::{
-    path::{Path, PathBuf},
+    path::PathBuf,
     str::FromStr,
     thread::{spawn, JoinHandle},
     sync::Arc
@@ -38,17 +38,16 @@ pub struct Errors {
     utf8: Error
 }
 
-fn search<P: AsRef<Path>>(file: P, pattern: &Finder, errors: Arc<Errors>) {
+fn search(filename: &str, text: &String, pattern: &Finder) {
     let mut num = 0usize;
 
-    read_to_string(&file, errors.clone()).lines().for_each(|line| {
+    text.lines().for_each(|line| {
         num += 1;
+
         if let Some(i) = pattern.find(line.as_bytes()) {
             println!(
                 "\u{001b}[34;1m[{}:{}]:\u{001b}[0m {}",
-                file.as_ref().to_str().unwrap_or_else(
-                    || errors.utf8.exit()
-                ),
+                filename,
                 num,
                 format!(
                     "{}\u{001b}[32m{}\u{001b}[0m{}",
@@ -61,16 +60,15 @@ fn search<P: AsRef<Path>>(file: P, pattern: &Finder, errors: Arc<Errors>) {
     });
 }
 
-fn search_regex<P: AsRef<Path>>(file: P, pattern: &Regex, errors: Arc<Errors>) {
+fn search_regex(filename: &str, text: &String, pattern: &Regex) {
     let mut num = 0usize;
-    read_to_string(&file, errors.clone()).lines().for_each(|line| {
+
+    text.lines().for_each(|line| {
         num += 1;
         if let Some(mat) = pattern.find(line) {
             println!(
                 "\u{001b}[33m[{}:{}]:\u{001b}[0m {}",
-                file.as_ref().to_str().unwrap_or_else(
-                    || errors.utf8.exit()
-                ),
+                filename,
                 num,
                 format!(
                     "{}\u{001b}[32m{}\u{001b}[0m{}",
@@ -175,20 +173,26 @@ fn main() {
 
     match m.subcommand().unwrap_or_else(|| unreachable!()) {
         ("file", sm) => match pattern {
-            Pattern::Str(s) => search(
-                sm.value_of("SEARCH_FILE").unwrap_or_else(
+            Pattern::Str(s) => {
+                let filename = sm.value_of("SEARCH_FILE").unwrap_or_else(
                     || unreachable!()
-                ),
-                &s,
-                errors.clone()
-            ),
-            Pattern::RegEx(r) => search_regex(
-                sm.value_of("SEARCH_FILE").unwrap_or_else(
+                );
+                search(
+                    filename,
+                    &read_to_string(filename, errors.clone()),
+                    &s,
+                );
+            },
+            Pattern::RegEx(r) => {
+                let filename = sm.value_of("SEARCH_FILE").unwrap_or_else(
                     || unreachable!()
-                ),
-                &r,
-                errors.clone()
-            )
+                );
+                search_regex(
+                    filename,
+                    &read_to_string(filename, errors.clone()),
+                    &r,
+                );
+            }
         },
         ("files", sm) => {
             let files = sm.values_of("SEARCH_FILES")
@@ -202,18 +206,22 @@ fn main() {
                     let c = s.clone();
                     let e = errors.clone();
                     threads.push(spawn(move || search(
-                        file,
-                        &c,
-                        e
+                        file.as_os_str().to_str().unwrap_or_else(
+                            || e.utf8.exit()
+                        ),
+                        &read_to_string(&file, e.clone()),
+                        &c
                     )));
                 }),
                 Pattern::RegEx(r) => files.for_each(|file| {
                     let c = r.clone();
                     let e = errors.clone();
                     threads.push(spawn(move || search_regex(
-                        file,
-                        &c,
-                        e
+                        file.as_os_str().to_str().unwrap_or_else(
+                            || e.utf8.exit()
+                        ),
+                        &read_to_string(&file, e.clone()),
+                        &c
                     )));
                 })
             }
@@ -250,18 +258,22 @@ fn main() {
                     let c = f.clone();
                     let e = errors.clone();
                     threads.push(spawn(move || search(
-                        file,
-                        &c,
-                        e
+                        file.as_os_str().to_str().unwrap_or_else(
+                            || e.utf8.exit()
+                        ),
+                        &read_to_string(&file, e),
+                        &c
                     )));
                 }),
                 Pattern::RegEx(r) => files.into_iter().for_each(|file| {
                     let c = r.clone();
                     let e = errors.clone();
                     threads.push(spawn(move || search_regex(
-                        file,
-                        &c,
-                        e
+                        file.as_os_str().to_str().unwrap_or_else(
+                            || e.utf8.exit()
+                        ),
+                        &read_to_string(&file, e),
+                        &c
                     )));
                 })
             }

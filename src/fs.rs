@@ -58,7 +58,7 @@ pub fn get_files<P: AsRef<Path>>(
     return out;
 }
 
-pub fn read_to_string<P: AsRef<Path>>(file: &P, errors: Arc<Errors>) -> String {
+pub fn read_to_string<P: AsRef<Path> + ?Sized>(file: &P, errors: Arc<Errors>) -> String {
     let mut buf = String::new();
 
     File::open(file).unwrap_or_else(
