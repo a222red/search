@@ -3,3 +3,5 @@
 build.sh
 run.sh
 search-*.zip
+.replit
+replit.nix
