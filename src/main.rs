@@ -158,7 +158,7 @@ fn main() {
         ),
         utf8: cmd.error(
             ErrorKind::ValueValidation,
-            "UTF-8 error"
+            "Invalid UTF-8 text"
         )
     });
     let m = cmd.get_matches_from(args_os());
