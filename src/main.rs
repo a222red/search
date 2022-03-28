@@ -1,27 +1,20 @@
 mod fs;
 mod search;
+mod cli;
 
 use crate::{
     fs::{get_files, read_to_string},
-    search::{search, search_regex}
+    search::{search, search_regex},
+    cli::gen_cli
 };
 
 use std::{
     path::PathBuf,
     str::FromStr,
-    thread::{spawn, JoinHandle},
-    sync::Arc
+    thread::{spawn, JoinHandle}
 };
 
-use clap::{
-    Command,
-    Arg,
-    crate_name,
-    crate_authors,
-    crate_version,
-    crate_description,
-    error::{Error, ErrorKind}
-};
+
 
 use wild::args_os;
 
@@ -34,92 +27,8 @@ enum Pattern<'a> {
     RegEx(Regex)
 }
 
-pub struct Errors {
-    bad_regex: Error,
-    bad_path: Error,
-    not_found: Error,
-    io: Error,
-    utf8: Error
-}
-
 fn main() {
-    let mut cmd = Command::new(crate_name!())
-        .version(crate_version!())
-        .author(crate_authors!())
-        .about(crate_description!())
-        .subcommand_required(true)
-        .arg(Arg::new("SEARCH_STR")
-            .help("String to search for")
-            .index(1)
-            .required(true)
-        )
-        .arg(Arg::new("REGEX")
-            .help("Treat search string as a regular expression")
-            .long("regex")
-            .short('r')
-        )
-        .subcommand(Command::new("file")
-            .visible_alias("f")
-            .arg(Arg::new("SEARCH_FILE")
-                .help("File to search in")
-                .index(1)
-                .required(true)
-            )
-        )
-        .subcommand(Command::new("files")
-            .visible_alias("s")
-            .arg(Arg::new("SEARCH_FILES")
-                .help("Files to search in")
-                .index(1)
-                .multiple_values(true)
-                .required(true)
-            )
-        )
-        .subcommand(Command::new("directory")
-            .visible_alias("dir")
-            .visible_alias("d")
-            .arg(Arg::new("SEARCH_DIR")
-                .help("Directory to search in")
-                .index(1)
-                .default_value(".")
-            )
-            .arg(Arg::new("EXCLUDE_DIRS")
-                .help("List of directories not to search in")
-                .long("exclude-dirs")
-                .takes_value(true)
-                .multiple_values(true)
-                .value_name("DIRS")
-            )
-            .arg(Arg::new("EXCLUDE_FILES")
-                .help("List of files not to search in")
-                .long("exclude-files")
-                .takes_value(true)
-                .multiple_values(true)
-                .value_name("FILES")
-            )
-        );
-    let errors = Arc::new(Errors {
-        bad_regex: cmd.error(
-            ErrorKind::ValueValidation,
-            "Invalid Regex pattern"
-        ),
-        bad_path: cmd.error(
-            ErrorKind::ValueValidation,
-            "Invalid path"
-        ),
-        not_found: cmd.error(
-            ErrorKind::ValueValidation,
-            "File or directory not found"
-        ),
-        io: cmd.error(
-            ErrorKind::ValueValidation,
-            "IO error"
-        ),
-        utf8: cmd.error(
-            ErrorKind::ValueValidation,
-            "Invalid UTF-8 text"
-        )
-    });
+    let (cmd, errors) = gen_cli();
     let m = cmd.get_matches_from(args_os());
 
     let search_str = m.value_of("SEARCH_STR")

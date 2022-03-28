@@ -1,4 +1,4 @@
-use crate::Errors;
+use crate::cli::Errors;
 
 use std::{
     fs::{read_dir, File},
