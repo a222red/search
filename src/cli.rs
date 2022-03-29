@@ -7,7 +7,7 @@ use clap::{
     crate_authors,
     crate_version,
     crate_description,
-    error::{Error, ErrorKind}
+    error::{ Error, ErrorKind }
 };
 
 pub struct Errors {

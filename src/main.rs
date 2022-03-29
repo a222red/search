@@ -3,15 +3,15 @@ mod search;
 mod cli;
 
 use crate::{
-    fs::{get_files, read_to_string},
-    search::{search, search_regex},
+    fs::{ get_files, read_to_string },
+    search::{ search, search_regex },
     cli::gen_cli
 };
 
 use std::{
     path::PathBuf,
     str::FromStr,
-    thread::{spawn, JoinHandle}
+    thread::{ spawn, JoinHandle }
 };
 
 
