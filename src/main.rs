@@ -14,8 +14,6 @@ use std::{
     thread::{ spawn, JoinHandle }
 };
 
-
-
 use wild::args_os;
 
 use memchr::memmem::Finder;
