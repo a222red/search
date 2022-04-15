@@ -31,7 +31,7 @@ pub fn search_regex(filename: &str, text: &String, pattern: &Regex) {
         num += 1;
         if let Some(mat) = pattern.find(line) {
             println!(
-                "\u{001b}[33m[{}:{}]:\u{001b}[0m {}",
+                "\u{001b}[34m[{}:{}]:\u{001b}[0m {}",
                 filename,
                 num,
                 format!(
